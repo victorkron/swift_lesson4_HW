@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Diff</key>
+	<array>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>enum Currency: String { // Вспомогательное перечисление для структцры Price
+    case USD = "USD"
+    case RUB = "RUB"
+}
+
+struct Price: CustomStringConvertible { // Структура для описания цены
+    public var value: Double?
+    public var name: String?
+    
+    init (amount value: Double? = nil, currency name: Currency) {
+        self.value = value
+        self.name = name.rawValue
+    }
+    
+    init() {
+        self.value = nil
+        self.name = nil
+    }
+    
+    mutating func changeValue(value: Double) {
+        self.value = value
+    }
+    
+    var description: String {
+        if (self.value == nil || self.name == nil) {
+            return "Price is not defined"
+        } else {
+            return "\(self.value!) \(self.name!)"
+        }
+    }
+}
+
+enum VehicleType: CustomStringConvertible {
+    case sportCar, truck, none
+    
+    init() {
+        self = .none
+    }
+    
+    var description: String {
+        switch self {
+        case .sportCar:
+            return "Легковой"
+        case .truck:
+            return "Грузовой"
+        default:
+            return "the type is not defined"
+        }
+    }
+}
+
+enum WindowsStatus: CustomStringConvertible {
+    case opened, closed
+    
+    var description: String {
+        switch self {
+        case .opened:
+            return "Окна открыты"
+        case .closed:
+            return "Окна закрыты"
+        }
+    }
+}
+
+enum EngineStatus: CustomStringConvertible {
+    case on, off
+    
+    var description: String {
+        switch self {
+        case .on:
+            return "Двигатель заведен"
+        case .off:
+            return "Двигатель выключен"
+        }
+    }
+}
+
+enum SpoilerStatus: CustomStringConvertible {
+    case removed
+    case added
+    
+    var description: String {
+        switch self {
+        case .removed:
+            return "Спойлер снят"
+        case .added:
+            return "Спойлер прикреплен"
+        }
+    }
+}
+
+enum TrailerStatus: CustomStringConvertible {
+    case removed
+    case added
+    
+    var description: String {
+        switch self {
+        case .removed:
+            return "Прицеп снят"
+        case .added:
+            return "Прицеп прикреплен"
+        }
+    }
+}
+
+enum Action {  
+    case switchWindow(WindowsStatus)
+    case switchEngine(EngineStatus)
+    case switchSpoiler(SpoilerStatus)
+    case switchTrailer(TrailerStatus)
+    case loadCargo(Double)
+    case unloadCargo(Double)
+}
+
+class Car: CustomStringConvertible {
+    fileprivate var type: VehicleType? = nil
+    fileprivate var brand: String
+    fileprivate var yearOfRelease: Int 
+    fileprivate var isEngineStarted: EngineStatus = .off
+    fileprivate var isWindowsOpened: WindowsStatus = .closed
+    fileprivate var currentCargo: Double = 0
+    fileprivate var price: Price = Price()
+    private var didDiscount = false
+    
+    init?(brand: String, yearOfRelease year: Int, isEngineStarted: EngineStatus = .off, isWindowsOpened: WindowsStatus = .closed, currentCargo: Double = 0, price: Price = Price()) {
+        self.brand = brand
+        self.yearOfRelease = year
+        self.isEngineStarted = isEngineStarted
+        self.isWindowsOpened = isWindowsOpened
+        self.currentCargo = currentCargo
+        self.price = price
+    }
+    
+    init?(brand: String, yearOfRelease year: Int) {
+        self.brand = brand
+        self.yearOfRelease = year
+    }
+    
+    func doDiscount(percent: Double) -&gt; Bool {
+        var result: Bool = false
+        if ( (percent &lt;= 10 &amp;&amp; percent &gt;= 0) &amp;&amp; !self.didDiscount) { 
+            var newCost = self.price.value! * (1 - percent/100)
+            self.didDiscount = true
+            self.price.changeValue(value: newCost)
+            print("price have changed")
+            result = true
+        } else if (didDiscount) {
+            print("the discount has already been made")
+        } else {
+            print("price haven't changed")
+        }
+        return result
+    }
+    
+    func action(action: Action) {
+        
+    }
+    
+    var description: String {
+        return "Тип:\(self.type) \nМарка:\(self.brand) \nГод:\(self.yearOfRelease)"
+    }
+    
+    deinit {
+        print("the deinitializer of Car have worked")
+    }
+}
+
+class SportCar: Car {
+    fileprivate var haveSpoiler: SpoilerStatus = .removed
+    fileprivate var trunkVolume: Double
+    
+    init?(brand: String, yearOfRelease year: Int, haveSpoiler: SpoilerStatus = .removed, trunkVolume: Double, isEngineStarted: EngineStatus = .off, isWindowsOpened: WindowsStatus = .closed, currentCargo: Double = 0, price: Price = Price()) {
+        self.haveSpoiler = haveSpoiler
+        self.trunkVolume = trunkVolume
+        super.init(brand: brand, yearOfRelease: year, isEngineStarted: isEngineStarted, isWindowsOpened: isWindowsOpened, currentCargo: currentCargo, price: price)
+        self.type = .sportCar
+    }
+    
+    init?(brand: String, yearOfRelease year: Int, haveSpoiler: SpoilerStatus = .removed, trunkVolume: Double) {
+        self.haveSpoiler = haveSpoiler
+        self.trunkVolume = trunkVolume
+        super.init(brand: brand, yearOfRelease: year)
+        self.type = .sportCar
+    }
+    
+    
+    func spoilerIsAdded() -&gt; Bool {
+        var res: Bool = false 
+        if (haveSpoiler == SpoilerStatus.added) {
+            res = true
+        }
+        return res
+    }
+    
+    final override func action(action: Action) {
+        switch action {
+        case .switchWindow(let status):
+            self.isWindowsOpened = status
+        case .switchEngine(let status):
+            self.isEngineStarted = status
+        case .switchSpoiler(let status):
+            self.haveSpoiler = status
+        case .loadCargo(let amount):
+            if amount &lt;= (self.trunkVolume - self.currentCargo) {
+                self.currentCargo += amount
+            }
+        case .unloadCargo(let amount):
+            if amount &lt;= (self.currentCargo) &amp;&amp; amount &gt; 0 {
+                self.currentCargo -= amount
+            }
+        default:
+            print("this action is not able for this class") 
+        }
+    }
+    
+    override var description: String {
+        return "---------------------\nТип: \(self.type!) \nМарка: \(self.brand) \nГод: \(self.yearOfRelease) \nЦена: \(self.price) \nРазмер багажника(литры): \(self.trunkVolume) \nТекущая загруженность(литры): \(self.currentCargo) \n\(self.haveSpoiler) \n\(self.isEngineStarted) \n\(self.isWindowsOpened) \n---------------------"
+    }
+    
+    deinit {
+        print("the deinitializer of \(self.brand) SportCar have worked")
+    }
+}
+
+
+class Truck: Car {
+    fileprivate var isTrailerAttached: TrailerStatus
+    fileprivate var trailerVolume: Double
+    
+    init?(brand: String, yearOfRelease year: Int, isTrailerAttached: TrailerStatus = .removed, trailerVolume: Double, isEngineStarted: EngineStatus = .off, isWindowsOpened: WindowsStatus = .closed, currentCargo: Double = 0, price: Price = Price()) {
+        self.isTrailerAttached = isTrailerAttached
+        self.trailerVolume = trailerVolume
+        super.init(brand: brand, yearOfRelease: year, isEngineStarted: isEngineStarted, isWindowsOpened: isWindowsOpened, currentCargo: currentCargo, price: price)
+        self.type = .truck
+    }
+    
+    init?(brand: String, yearOfRelease year: Int, isTrailerAttached: TrailerStatus = .removed, trailerVolume: Double) {
+        self.isTrailerAttached = isTrailerAttached
+        self.trailerVolume = trailerVolume
+        super.init(brand: brand, yearOfRelease: year)
+        self.type = .truck
+    }
+    
+    func trailerIsAttached() -&gt; Bool {
+        var res: Bool = false 
+        if (isTrailerAttached == TrailerStatus.added) {
+            res = true
+        }
+        return res
+    }
+    
+    final override func action(action: Action) {
+        switch action {
+        case .switchWindow(let status):
+            self.isWindowsOpened = status
+        case .switchEngine(let status):
+            self.isEngineStarted = status
+        case .switchTrailer(let status):
+            self.isTrailerAttached = status
+        case .loadCargo(let amount):
+            if amount &lt;= (self.trailerVolume - self.currentCargo) {
+                self.currentCargo += amount
+            }
+        case .unloadCargo(let amount):
+            if amount &lt;= (self.currentCargo) &amp;&amp; amount &gt; 0 {
+                self.currentCargo -= amount
+            }
+        default:
+            print("this action is not able for this class") 
+        }
+    }
+    
+    override var description: String {
+        return "---------------------\nТип: \(self.type!) \nМарка: \(self.brand) \nГод: \(self.yearOfRelease) \nЦена: \(self.price) \nРазмер багажника(литры): \(self.trailerVolume) \nТекущая загруженность(литры): \(self.currentCargo) \n\(self.isTrailerAttached) \n\(self.isEngineStarted) \n\(self.isWindowsOpened) \n---------------------"
+    }
+    
+    deinit {
+        print("the deinitializer of \(self.brand) Truck have worked")
+    }
+}
+
+var volvoSportcar: SportCar! = SportCar(brand: "Volvo", yearOfRelease: 2007, haveSpoiler: .removed, trunkVolume: 400, isEngineStarted: .off, isWindowsOpened: .closed, currentCargo: 0, price: Price(amount: 12000, currency: .USD))
+volvoSportcar.action(action: .switchEngine(.on))
+volvoSportcar.doDiscount(percent: 7)
+volvoSportcar.action(action: .loadCargo(320))
+print(volvoSportcar!)
+volvoSportcar = nil
+
+
+var lexusSportCar: SportCar! = SportCar(brand: "Lexus", yearOfRelease: 2018, haveSpoiler: .added, trunkVolume: 300, isEngineStarted: .on, isWindowsOpened: .closed, currentCargo: 0, price: Price(amount: 120000, currency: .USD))
+lexusSportCar.action(action: .switchSpoiler(.removed))
+lexusSportCar.action(action: .switchWindow(.opened))
+lexusSportCar.action(action: .loadCargo(20))
+lexusSportCar.doDiscount(percent: 3)
+print(lexusSportCar!)
+lexusSportCar = nil
+
+
+var fordTruck: Truck! = Truck(brand: "Ford", yearOfRelease: 2009, isTrailerAttached: .added, trailerVolume: 15000, isEngineStarted: .off, isWindowsOpened: .closed, currentCargo: 0, price: Price(amount: 90000, currency: .USD))
+fordTruck.action(action: .loadCargo(12000))
+fordTruck.action(action: .switchEngine(.on))
+fordTruck.action(action: .unloadCargo(11000))
+fordTruck.action(action: .switchTrailer(.removed))
+fordTruck.doDiscount(percent: 3)
+print(fordTruck!)
+fordTruck = nil
+
+
+var mercedesBenzTruck: Truck! = Truck(brand: "MercedesBenz", yearOfRelease: 2015, isTrailerAttached: .added, trailerVolume: 12000, isEngineStarted: .on, isWindowsOpened: .closed, currentCargo: 0, price: Price(amount: 180000, currency: .USD))
+mercedesBenzTruck.action(action: .loadCargo(3700))
+mercedesBenzTruck.action(action: .switchEngine(.off))
+mercedesBenzTruck.action(action: .switchTrailer(.removed))
+mercedesBenzTruck.action(action: .unloadCargo(3700))
+mercedesBenzTruck.action(action: .switchTrailer(.added))
+mercedesBenzTruck.action(action: .switchEngine(.on))
+mercedesBenzTruck.action(action: .switchWindow(.opened))
+print(mercedesBenzTruck!)
+mercedesBenzTruck = nil
+</string>
+			<key>ModifiedRange</key>
+			<string>{0, 10899}</string>
+			<key>OriginalContent</key>
+			<string>
+</string>
+			<key>OriginalRange</key>
+			<string>{0, 1}</string>
+		</dict>
+	</array>
+	<key>File</key>
+	<string>Chapters/Chapter1.playgroundchapter/Pages/My Playground.playgroundpage/main.swift</string>
+</dict>
+</plist>
